@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id           String   @id @default(cuid())
+  name         String
+  domain       String   @unique
+  hrisType     String   @default("manual") // "bamboohr" | "rippling" | "manual"
+  hrisApiKey   String?
+  webhookSecret String  @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  employees    Employee[]
+  integrations Integration[]
+  events       OffboardingEvent[]
+}
+
+model Employee {
+  id             String    @id @default(cuid())
+  externalId     String?   // ID from HRIS system
+  name           String
+  email          String
+  department     String?
+  role           String?
+  status         String    @default("active") // "active" | "offboarding" | "offboarded"
+  offboardedAt   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  events         OffboardingEvent[]
+
+  @@unique([email, organizationId])
+}
+
+model Integration {
+  id              String   @id @default(cuid())
+  type            String   // "google" | "slack" | "github"
+  name            String
+  isConnected     Boolean  @default(false)
+  accessToken     String?  // encrypted
+  refreshToken    String?  // encrypted
+  expiresAt       DateTime?
+  metadata        Json?    // extra config (org name, workspace id, etc.)
+  lastTestedAt    DateTime?
+  lastTestStatus  String?  // "success" | "failed"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([type, organizationId])
+}
+
+model OffboardingEvent {
+  id              String    @id @default(cuid())
+  triggeredAt     DateTime  @default(now())
+  completedAt     DateTime?
+  status          String    @default("in_progress") // "in_progress" | "completed" | "partial" | "failed"
+  triggeredBy     String    @default("webhook") // "webhook" | "manual" | "api"
+  n8nExecutionId  String?
+
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  revocations     AccessRevocation[]
+}
+
+model AccessRevocation {
+  id           String    @id @default(cuid())
+  integration  String    // "google" | "slack" | "github"
+  status       String    @default("pending") // "pending" | "success" | "failed" | "skipped"
+  revokedAt    DateTime?
+  errorMessage String?
+  metadata     Json?     // extra details (e.g. transferred drive ownership to X)
+
+  eventId      String
+  event        OffboardingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
