@@ -1,0 +1,37 @@
+services:
+  # Express backend
+  - type: web
+    name: secureonboard-api
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy && npm run build
+    startCommand: node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: secureonboard-db
+          property: connectionString
+      - key: FRONTEND_URL
+        sync: false
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: N8N_BASE_URL
+        value: ""
+      - key: N8N_API_KEY
+        value: ""
+      - key: N8N_OFFBOARDING_WORKFLOW_ID
+        value: ""
+
+  # PostgreSQL database
+databases:
+  - name: secureonboard-db
+    region: singapore
+    plan: free
+    databaseName: secureonboard
+    user: secureonboard
