@@ -20,51 +20,43 @@
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgba(255, 255, 255, 0.2);
 }
 
-/* Glassmorphism utility */
+/* Glassmorphism utility - Premium */
 .glass {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.1);
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
 .glass-card {
-  background: rgba(30, 41, 59, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(148, 163, 184, 0.08);
+  background: rgba(17, 25, 40, 0.6);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
-/* Glow effects */
-.glow-blue {
-  box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 40px -5px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.glow-green {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
-}
-
-.glow-red {
-  box-shadow: 0 0 20px rgba(244, 63, 94, 0.3);
-}
-
-/* Animated gradient background */
+/* Animated gradient background - Vibrant Dark Mode */
 .bg-gradient-animated {
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  background: linear-gradient(-45deg, #0f172a, #1e1b4b, #020617, #172554);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
 }
@@ -77,29 +69,36 @@
 
 /* Pulse dot animation */
 .pulse-dot {
-  animation: pulseDot 2s ease-in-out infinite;
+  animation: pulseDot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @keyframes pulseDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+  50% { opacity: 0.5; transform: scale(0.85); box-shadow: 0 0 0 4px rgba(52, 211, 153, 0); }
 }
 
-/* Status badge */
-.status-success { @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20; }
-.status-pending { @apply bg-amber-500/10 text-amber-400 border border-amber-500/20; }
-.status-failed { @apply bg-rose-500/10 text-rose-400 border border-rose-500/20; }
-.status-active { @apply bg-blue-500/10 text-blue-400 border border-blue-500/20; }
-.status-skipped { @apply bg-slate-500/10 text-slate-400 border border-slate-500/20; }
+/* Status badges with subtle glow */
+.status-success { @apply bg-emerald-500/15 text-emerald-300 border border-emerald-500/30; box-shadow: 0 0 10px rgba(16, 185, 129, 0.1); }
+.status-pending { @apply bg-amber-500/15 text-amber-300 border border-amber-500/30; box-shadow: 0 0 10px rgba(245, 158, 11, 0.1); }
+.status-failed { @apply bg-rose-500/15 text-rose-300 border border-rose-500/30; box-shadow: 0 0 10px rgba(244, 63, 94, 0.1); }
+.status-active { @apply bg-blue-500/15 text-blue-300 border border-blue-500/30; box-shadow: 0 0 10px rgba(59, 130, 246, 0.1); }
 
-/* Shimmer loading skeleton */
+/* Premium skeleton */
 .skeleton {
-  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background: linear-gradient(90deg, rgba(30,41,59,0.5) 25%, rgba(51,65,85,0.6) 50%, rgba(30,41,59,0.5) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 2s infinite linear;
 }
 
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Smooth input styling */
+input {
+  transition: all 0.2s ease;
+}
+input:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }

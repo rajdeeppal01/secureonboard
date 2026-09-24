@@ -70,3 +70,15 @@ auditRouter.get('/export', async (req: Request, res: Response) => {
 
   return res.json(events);
 });
+
+// POST /api/audit/seed (demo only)
+import { exec } from 'child_process';
+auditRouter.post('/seed', (req, res) => {
+  exec('npm run db:seed', (error, stdout, stderr) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
+      return res.status(500).json({ error: error.message });
+    }
+    return res.json({ success: true, output: stdout });
+  });
+});
