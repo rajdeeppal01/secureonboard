@@ -5,56 +5,49 @@ import crypto from 'crypto';
 
 export const webhookRouter = Router();
 
-/**
- * POST /api/webhooks/offboard
- */
+// POST /api/webhooks/offboard
 webhookRouter.post('/offboard', async (req: Request, res: Response) => {
   try {
     const { employeeEmail, organizationId, source = 'manual' } = req.body;
-
     if (!employeeEmail || !organizationId) {
       return res.status(400).json({ error: 'employeeEmail and organizationId are required' });
     }
 
-    const employees = store.getEmployees(organizationId);
-    const employee = employees.find((e) => e.email === employeeEmail);
+    const employees = await store.getEmployees(organizationId as string);
+    const employee = employees.find((e: any) => e.email === employeeEmail);
 
     if (!employee) {
-      return res.status(404).json({ error: `Employee ${employeeEmail} not found in organization` });
+      return res.status(404).json({ error: `Employee ${employeeEmail} not found` });
     }
-
     if (employee.status === 'offboarded') {
       return res.status(409).json({ error: 'Employee is already offboarded' });
     }
 
-    // Mark as offboarding
-    store.updateEmployee(employee.id, { status: 'offboarding' });
+    await store.updateEmployee(employee.id, { status: 'offboarding' });
 
-    // Get active integrations
-    const integrations = store.getIntegrations(organizationId).filter((i) => i.isConnected);
+    const integrations = await store.getIntegrations(organizationId as string);
+    const activeIntegrations = integrations.filter((i: any) => i.isConnected);
 
-    // Create event
-    const event = store.createEvent({
+    const event = await store.createEvent({
       employeeId: employee.id,
-      organizationId,
-      triggeredBy: source,
-      integrationTypes: integrations.map((i) => i.type),
+      organizationId: organizationId as string,
+      triggeredBy: source as string,
+      integrationTypes: activeIntegrations.map((i: any) => i.type),
     });
 
-    // Trigger n8n (or simulation)
     triggerOffboardingWorkflow({
-      eventId: event.id,
+      eventId: (event as any).id,
       employeeEmail,
       employeeName: employee.name,
-      organizationId,
-      integrations: integrations.map((i) => i.type),
+      organizationId: organizationId as string,
+      integrations: activeIntegrations.map((i: any) => i.type),
     }).catch(console.error);
 
     return res.status(202).json({
       message: 'Offboarding initiated',
-      eventId: event.id,
+      eventId: (event as any).id,
       employee: { name: employee.name, email: employeeEmail },
-      integrationsQueued: integrations.length,
+      integrationsQueued: activeIntegrations.length,
     });
   } catch (error) {
     console.error('Webhook error:', error);
@@ -62,13 +55,11 @@ webhookRouter.post('/offboard', async (req: Request, res: Response) => {
   }
 });
 
-/**
- * POST /api/webhooks/n8n/status
- */
+// POST /api/webhooks/n8n/status
 webhookRouter.post('/n8n/status', async (req: Request, res: Response) => {
   try {
     const { eventId, integration, status, errorMessage } = req.body;
-    store.updateRevocation(eventId, integration, status, errorMessage);
+    await store.updateRevocation(eventId, integration, status, errorMessage);
     return res.json({ success: true });
   } catch (error) {
     console.error('n8n status webhook error:', error);
@@ -76,23 +67,14 @@ webhookRouter.post('/n8n/status', async (req: Request, res: Response) => {
   }
 });
 
-/**
- * POST /api/webhooks/bamboohr
- */
+// POST /api/webhooks/bamboohr
 webhookRouter.post('/bamboohr', async (req: Request, res: Response) => {
   const signature = req.headers['x-bamboohr-signature'] as string;
   const rawBody = JSON.stringify(req.body);
   const secret = process.env.WEBHOOK_SECRET || '';
-
-  const expectedSig = crypto
-    .createHmac('sha256', secret)
-    .update(rawBody)
-    .digest('hex');
-
+  const expectedSig = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
   if (signature !== expectedSig) {
     return res.status(401).json({ error: 'Invalid signature' });
   }
-
-  // TODO: Parse BambooHR payload and call /offboard
   return res.json({ received: true });
 });

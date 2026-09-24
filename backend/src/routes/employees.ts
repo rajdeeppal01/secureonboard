@@ -7,7 +7,8 @@ export const employeeRouter = Router();
 employeeRouter.get('/', async (req: Request, res: Response) => {
   const { orgId } = req.query;
   if (!orgId) return res.status(400).json({ error: 'orgId required' });
-  return res.json(store.getEmployees(orgId as string));
+  const employees = await store.getEmployees(orgId as string);
+  return res.json(employees);
 });
 
 // POST /api/employees
@@ -16,17 +17,17 @@ employeeRouter.post('/', async (req: Request, res: Response) => {
   if (!name || !email || !organizationId) {
     return res.status(400).json({ error: 'name, email, organizationId required' });
   }
-  // Check for duplicate email
-  const existing = store.getEmployees(organizationId).find((e) => e.email === email);
-  if (existing) return res.status(409).json({ error: 'Employee with this email already exists' });
-
-  const employee = store.addEmployee({ name, email, department, role, organizationId });
+  const existing = await store.getEmployees(organizationId as string);
+  if (existing.find((e: any) => e.email === email)) {
+    return res.status(409).json({ error: 'Employee with this email already exists' });
+  }
+  const employee = await store.addEmployee({ name, email, department, role, organizationId });
   return res.status(201).json(employee);
 });
 
 // GET /api/employees/:id
 employeeRouter.get('/:id', async (req: Request, res: Response) => {
-  const employee = store.getEmployee(req.params.id);
+  const employee = await store.getEmployee(req.params.id as string);
   if (!employee) return res.status(404).json({ error: 'Employee not found' });
   return res.json(employee);
 });
@@ -34,14 +35,14 @@ employeeRouter.get('/:id', async (req: Request, res: Response) => {
 // PATCH /api/employees/:id
 employeeRouter.patch('/:id', async (req: Request, res: Response) => {
   const { name, department, role, status } = req.body;
-  const employee = store.updateEmployee(req.params.id, { name, department, role, status });
+  const employee = await store.updateEmployee(req.params.id as string, { name, department, role, status });
   if (!employee) return res.status(404).json({ error: 'Employee not found' });
   return res.json(employee);
 });
 
 // DELETE /api/employees/:id
 employeeRouter.delete('/:id', async (req: Request, res: Response) => {
-  const ok = store.deleteEmployee(req.params.id);
+  const ok = await store.deleteEmployee(req.params.id as string);
   if (!ok) return res.status(404).json({ error: 'Employee not found' });
   return res.json({ success: true });
 });
