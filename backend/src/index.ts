@@ -58,9 +58,11 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🛡️  SecureOnboard API running on http://localhost:${PORT}`);
-  console.log(`📊  Health check: http://localhost:${PORT}/health`);
+const portNumber = Number(PORT) || 4000;
+
+app.listen(portNumber, '0.0.0.0', () => {
+  console.log(`🛡️  SecureOnboard API running on http://0.0.0.0:${portNumber}`);
+  console.log(`📊  Health check: http://0.0.0.0:${portNumber}/health`);
 });
 
 export default app;
