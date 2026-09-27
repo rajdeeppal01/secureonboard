@@ -293,30 +293,60 @@ export default function IntegrationsPage() {
                 />
               </div>
             </div>
-            <div>
-              <label className="text-xs text-slate-400 mb-1 block">Access Token / API Key</label>
-              <input
-                type="password"
-                required
-                placeholder="Paste your API key or access token"
-                value={connectForm.token}
-                onChange={(e) => setConnectForm((f) => ({ ...f, token: e.target.value }))}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all"
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button type="button" onClick={() => setShowConnect(false)} className="px-4 py-2 text-sm text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-all">
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={connecting}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center gap-2"
-              >
-                {connecting && <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                Connect
-              </button>
-            </div>
+            {connectForm.type === 'google' ? (
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-blue-500/20 text-center space-y-3">
+                <p className="text-xs text-slate-300">
+                  SecureOnboard uses OAuth to connect to Google Workspace. You must sign in with a Google Admin account to grant Admin SDK permissions.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const orgId = process.env.NEXT_PUBLIC_ORG_ID || 'demo-org-id';
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+                    
+                    // Listen for success message from popup
+                    window.addEventListener('message', (event) => {
+                      if (event.data?.type === 'integration_success' && event.data?.provider === 'google') {
+                        setShowConnect(false);
+                        load();
+                      }
+                    }, { once: true });
+                    
+                    window.open(`${apiUrl}/api/integrations/google/auth?orgId=${orgId}`, 'Connect Google', 'width=500,height=600');
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all"
+                >
+                  Connect via Google OAuth
+                </button>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Access Token / API Key</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Paste your API key or access token"
+                    value={connectForm.token}
+                    onChange={(e) => setConnectForm((f) => ({ ...f, token: e.target.value }))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button type="button" onClick={() => setShowConnect(false)} className="px-4 py-2 text-sm text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-all">
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={connecting}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {connecting && <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                    Connect
+                  </button>
+                </div>
+              </>
+            )}
           </form>
         </div>
       )}

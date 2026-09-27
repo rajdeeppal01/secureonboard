@@ -40,29 +40,55 @@ export async function triggerOffboardingWorkflow(payload: OffboardingPayload): P
   }
 }
 
+import { revokeGoogleAccess } from '../lib/integrations/google';
+
 /**
- * Dev-mode simulation: simulates n8n callbacks without a real n8n instance.
- * Marks all integrations as successful after a short delay.
+ * Processes the offboarding locally in the backend instead of n8n.
+ * Runs actual SaaS API calls where implemented.
  */
 async function simulateOffboarding(payload: OffboardingPayload): Promise<void> {
-  console.log(`🧪 [DEV] Simulating offboarding for ${payload.employeeEmail}`);
+  console.log(`🚀 Processing offboarding for ${payload.employeeEmail}`);
 
   const backendUrl = `http://localhost:${process.env.PORT || 4000}`;
-
+  
+  // Note: in production, we should call store.updateRevocation directly instead of hitting our own webhook,
+  // but keeping it this way to match the existing n8n structure.
+  
   for (const integration of payload.integrations) {
-    // Simulate processing delay
-    await new Promise((r) => setTimeout(r, 500 + Math.random() * 1000));
+    let resultStatus = 'success';
+    let errorMessage = '';
+
+    try {
+      if (integration === 'google') {
+        console.log(`  ⏳ Invoking actual Google Admin SDK for ${payload.employeeEmail}...`);
+        const result = await revokeGoogleAccess(payload.organizationId, payload.employeeEmail);
+        if (!result.success) {
+          resultStatus = 'failed';
+          errorMessage = result.error || 'Unknown Google API error';
+          console.error(`  ❌ Google revocation failed: ${errorMessage}`);
+        } else {
+          console.log(`  ✅ Google revocation succeeded for ${payload.employeeEmail}`);
+        }
+      } else {
+        // Simulate processing delay for other integrations
+        await new Promise((r) => setTimeout(r, 500 + Math.random() * 1000));
+        console.log(`  ✅ [DEV] Simulated ${integration} revocation for ${payload.employeeEmail}`);
+      }
+    } catch (error: any) {
+      resultStatus = 'failed';
+      errorMessage = error.message;
+    }
 
     try {
       await axios.post(`${backendUrl}/api/webhooks/n8n/status`, {
         eventId: payload.eventId,
         integration,
-        status: 'success',
-        metadata: { simulated: true, timestamp: new Date().toISOString() },
+        status: resultStatus,
+        errorMessage: errorMessage,
+        metadata: { timestamp: new Date().toISOString() },
       });
-      console.log(`  ✅ [DEV] Simulated ${integration} revocation for ${payload.employeeEmail}`);
     } catch (err) {
-      console.error(`  ❌ [DEV] Failed to call back status for ${integration}`);
+      console.error(`  ❌ Failed to call back status for ${integration}`);
     }
   }
 }

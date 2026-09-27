@@ -42,3 +42,43 @@ integrationRouter.post('/:id/test', async (req: Request, res: Response) => {
     testedAt: (result as any).lastTestedAt?.toISOString(),
   });
 });
+
+import { getGoogleAuthUrl, getGoogleOAuthClient } from '../lib/integrations/google';
+
+// GET /api/integrations/google/auth
+integrationRouter.get('/google/auth', (req: Request, res: Response) => {
+  const { orgId } = req.query;
+  if (!orgId) return res.status(400).send('orgId is required');
+  const url = getGoogleAuthUrl(orgId as string);
+  res.redirect(url);
+});
+
+// GET /api/integrations/google/callback
+integrationRouter.get('/google/callback', async (req: Request, res: Response) => {
+  const { code, state: orgId } = req.query;
+  if (!code || !orgId) return res.status(400).send('Missing code or state (orgId)');
+  
+  try {
+    const oauth2Client = getGoogleOAuthClient();
+    const { tokens } = await oauth2Client.getToken(code as string);
+    
+    await store.upsertIntegration({
+      type: 'google',
+      name: 'Google Workspace',
+      organizationId: orgId as string,
+      accessToken: tokens.access_token!,
+      // Optionally store tokens.refresh_token if you added it to schema
+    });
+
+    res.send(`
+      <script>
+        window.opener.postMessage({ type: 'integration_success', provider: 'google' }, '*');
+        window.close();
+      </script>
+      <p>Authentication successful! You can close this tab.</p>
+    `);
+  } catch (err: any) {
+    console.error('OAuth callback error:', err);
+    res.status(500).send('Authentication failed');
+  }
+});
