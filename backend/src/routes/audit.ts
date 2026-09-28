@@ -83,8 +83,7 @@ auditRouter.post('/seed', (req, res) => {
   });
 });
 
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 // POST /api/audit/clear (clears employees and events, keeps orgs/integrations)
 auditRouter.post('/clear', async (req, res) => {
