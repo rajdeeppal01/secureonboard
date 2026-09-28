@@ -82,3 +82,18 @@ auditRouter.post('/seed', (req, res) => {
     return res.json({ success: true, output: stdout });
   });
 });
+
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+
+// POST /api/audit/clear (clears employees and events, keeps orgs/integrations)
+auditRouter.post('/clear', async (req, res) => {
+  try {
+    await prisma.offboardingEvent.deleteMany({});
+    await prisma.employee.deleteMany({});
+    return res.json({ success: true, message: 'All mock employees and events cleared successfully.' });
+  } catch (error: any) {
+    console.error('Error clearing data:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
