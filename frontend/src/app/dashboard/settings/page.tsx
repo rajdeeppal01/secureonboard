@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Settings, Copy, Check, Eye, EyeOff, Shield, Bell, Key, Globe } from "lucide-react";
-import { ORG_ID } from "@/lib/api";
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -128,23 +127,12 @@ export default function SettingsPage() {
         </form>
       </div>
 
-      {/* API & Webhooks */}
+    {/* API & Webhooks */}
       <div className="glass-card rounded-2xl p-5 space-y-5">
         <h2 className="text-sm font-semibold text-white flex items-center gap-2">
           <Key className="w-4 h-4 text-violet-400" />
           API & Webhooks
         </h2>
-
-        <div>
-          <label className="text-xs text-slate-400 mb-1.5 block">Organization ID</label>
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5">
-            <code className="flex-1 text-sm text-violet-300 font-mono">{ORG_ID}</code>
-            <CopyButton text={ORG_ID} />
-          </div>
-          <p className="text-xs text-slate-500 mt-1.5">
-            Pass as <code className="text-slate-400">organizationId</code> in API requests.
-          </p>
-        </div>
 
         <div>
           <label className="text-xs text-slate-400 mb-1.5 block">Webhook Endpoint (HRIS)</label>

@@ -1,6 +1,6 @@
 import { clerkMiddleware, getAuth, requireAuth } from '@clerk/express';
 import { Request, Response, NextFunction } from 'express';
-import { db as store } from './lib/db';
+import { db as store } from '../lib/db';
 
 /**
  * Clerk authentication middleware for Express.

@@ -5,7 +5,8 @@ import {
   Users, Plus, Search, Shield, Trash2, ChevronRight,
   CheckCircle2, Clock, XCircle, UserMinus
 } from "lucide-react";
-import { api, type Employee } from "@/lib/api";
+import { type Employee } from "@/lib/api";
+import { useApi } from "@/lib/useApi";
 
 function relativeTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -41,6 +42,7 @@ export default function EmployeesPage() {
   // Add form state
   const [form, setForm] = useState({ name: "", email: "", department: "", role: "" });
   const [adding, setAdding] = useState(false);
+  const api = useApi();
 
   const load = useCallback(async () => {
     setLoading(true);

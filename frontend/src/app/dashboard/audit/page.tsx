@@ -5,7 +5,8 @@ import {
   FileText, Download, Search, CheckCircle2, XCircle,
   Activity, Clock, Filter, ChevronLeft, ChevronRight
 } from "lucide-react";
-import { api, type OffboardingEvent } from "@/lib/api";
+import { type OffboardingEvent } from "@/lib/api";
+import { useApi } from "@/lib/useApi";
 
 const PAGE_SIZE = 20;
 
@@ -63,6 +64,7 @@ function RevBadge({ integration, status }: { integration: string; status: string
 }
 
 export default function AuditPage() {
+  const api = useApi();
   const [events, setEvents] = useState<OffboardingEvent[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -70,6 +72,7 @@ export default function AuditPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [csvUrl, setCsvUrl] = useState<string>("#");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -82,6 +85,9 @@ export default function AuditPage() {
       });
       setEvents(data.events);
       setTotal(data.total);
+      
+      const url = await api.exportAuditCsvUrl();
+      setCsvUrl(url);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load audit log");
     } finally {
@@ -112,7 +118,7 @@ export default function AuditPage() {
           </p>
         </div>
         <a
-          href={api.exportAuditCsv()}
+          href={csvUrl}
           download="secureonboard-audit.csv"
           className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all"
         >

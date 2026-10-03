@@ -29,7 +29,7 @@ export const revokeSlackAccess = async (orgId: string, userEmail: string) => {
         user: userId,
       });
       if (!response.ok) {
-        throw new Error(response.error || 'Failed to deactivate user.');
+        throw new Error((response as any).error || 'Failed to deactivate user.');
       }
     } catch (err: any) {
       if (err.message.includes('not_allowed') || err.message.includes('missing_scope')) {

@@ -5,7 +5,8 @@ import {
   Plug, CheckCircle2, XCircle, RefreshCw,
   Trash2, Plus, Zap, AlertTriangle
 } from "lucide-react";
-import { api, type Integration } from "@/lib/api";
+import { type Integration } from "@/lib/api";
+import { useApi } from "@/lib/useApi";
 
 const INTEGRATION_META: Record<string, { label: string; description: string; docsUrl: string; color: string; initials: string }> = {
   google: {
@@ -183,6 +184,7 @@ export default function IntegrationsPage() {
   const [showConnect, setShowConnect] = useState(false);
   const [connectForm, setConnectForm] = useState({ type: "google", name: "", token: "" });
   const [connecting, setConnecting] = useState(false);
+  const api = useApi();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -312,7 +314,7 @@ export default function IntegrationsPage() {
                       }
                     }, { once: true });
                     
-                    window.open(`${apiUrl}/api/integrations/google/auth?orgId=${orgId}`, 'Connect Google', 'width=500,height=600');
+                    window.open(`${apiUrl}/api/integrations/google/auth`, 'Connect Google', 'width=500,height=600');
                   }}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all"
                 >
