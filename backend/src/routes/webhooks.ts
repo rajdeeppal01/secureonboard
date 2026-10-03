@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db as store } from '../lib/db';
-import { triggerOffboardingWorkflow } from '../services/n8n.service';
+import { triggerOffboardingWorkflow } from '../services/offboarding.service';
 import crypto from 'crypto';
 
 export const webhookRouter = Router();
@@ -53,18 +53,6 @@ webhookRouter.post('/offboard', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Webhook error:', error);
     return res.status(500).json({ error: 'Failed to process offboarding webhook' });
-  }
-});
-
-// POST /api/webhooks/n8n/status
-webhookRouter.post('/n8n/status', async (req: Request, res: Response) => {
-  try {
-    const { eventId, integration, status, errorMessage } = req.body;
-    await store.updateRevocation(eventId, integration, status, errorMessage);
-    return res.json({ success: true });
-  } catch (error) {
-    console.error('n8n status webhook error:', error);
-    return res.status(500).json({ error: 'Failed to update status' });
   }
 });
 
