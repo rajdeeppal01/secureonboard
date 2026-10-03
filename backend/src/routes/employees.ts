@@ -3,25 +3,25 @@ import { db as store } from '../lib/db';
 
 export const employeeRouter = Router();
 
-// GET /api/employees?orgId=xxx
+// GET /api/employees
 employeeRouter.get('/', async (req: Request, res: Response) => {
-  const { orgId } = req.query;
-  if (!orgId) return res.status(400).json({ error: 'orgId required' });
-  const employees = await store.getEmployees(orgId as string);
+  const orgId = (req as any).orgId;
+  const employees = await store.getEmployees(orgId);
   return res.json(employees);
 });
 
 // POST /api/employees
 employeeRouter.post('/', async (req: Request, res: Response) => {
-  const { name, email, department, role, organizationId } = req.body;
-  if (!name || !email || !organizationId) {
-    return res.status(400).json({ error: 'name, email, organizationId required' });
+  const orgId = (req as any).orgId;
+  const { name, email, department, role } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ error: 'name and email required' });
   }
-  const existing = await store.getEmployees(organizationId as string);
+  const existing = await store.getEmployees(orgId);
   if (existing.find((e: any) => e.email === email)) {
     return res.status(409).json({ error: 'Employee with this email already exists' });
   }
-  const employee = await store.addEmployee({ name, email, department, role, organizationId });
+  const employee = await store.addEmployee({ name, email, department, role, organizationId: orgId });
   return res.status(201).json(employee);
 });
 

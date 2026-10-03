@@ -12,6 +12,22 @@ export const prismaStore = {
     return prisma.organization.findUnique({ where: { id } });
   },
 
+  /** Find the organization owned by a Clerk user */
+  getOrgByClerkUserId(clerkUserId: string) {
+    return prisma.organization.findUnique({ where: { clerkUserId } });
+  },
+
+  /** Auto-provision a new organization for a first-time Clerk user */
+  createOrgForUser(clerkUserId: string) {
+    return prisma.organization.create({
+      data: {
+        name: 'My Organization',
+        domain: `org-${clerkUserId.slice(-8)}.secureonboard.io`,
+        clerkUserId,
+      },
+    });
+  },
+
   getEmployees(orgId: string) {
     return prisma.employee.findMany({
       where: { organizationId: orgId },

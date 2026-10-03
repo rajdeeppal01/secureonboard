@@ -8,9 +8,10 @@ export const webhookRouter = Router();
 // POST /api/webhooks/offboard
 webhookRouter.post('/offboard', async (req: Request, res: Response) => {
   try {
-    const { employeeEmail, organizationId, source = 'manual' } = req.body;
-    if (!employeeEmail || !organizationId) {
-      return res.status(400).json({ error: 'employeeEmail and organizationId are required' });
+    const organizationId = (req as any).orgId;
+    const { employeeEmail, source = 'manual' } = req.body;
+    if (!employeeEmail) {
+      return res.status(400).json({ error: 'employeeEmail is required' });
     }
 
     const employees = await store.getEmployees(organizationId as string);

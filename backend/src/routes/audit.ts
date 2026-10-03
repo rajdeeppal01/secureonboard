@@ -3,10 +3,10 @@ import { db as store } from '../lib/db';
 
 export const auditRouter = Router();
 
-// GET /api/audit?orgId=xxx&limit=50&offset=0&status=xxx
+// GET /api/audit
 auditRouter.get('/', async (req: Request, res: Response) => {
-  const { orgId, limit = '50', offset = '0', employeeId, status } = req.query;
-  if (!orgId) return res.status(400).json({ error: 'orgId required' });
+  const orgId = (req as any).orgId;
+  const { limit = '50', offset = '0', employeeId, status } = req.query;
 
   const result = await store.getEvents(orgId as string, {
     limit: parseInt(limit as string),
@@ -23,18 +23,17 @@ auditRouter.get('/', async (req: Request, res: Response) => {
   });
 });
 
-// GET /api/audit/stats?orgId=xxx
+// GET /api/audit/stats
 auditRouter.get('/stats', async (req: Request, res: Response) => {
-  const { orgId } = req.query;
-  if (!orgId) return res.status(400).json({ error: 'orgId required' });
-  const stats = await store.getStats(orgId as string);
+  const orgId = (req as any).orgId;
+  const stats = await store.getStats(orgId);
   return res.json(stats);
 });
 
-// GET /api/audit/export?orgId=xxx&format=csv
+// GET /api/audit/export?format=csv
 auditRouter.get('/export', async (req: Request, res: Response) => {
-  const { orgId, format = 'csv' } = req.query;
-  if (!orgId) return res.status(400).json({ error: 'orgId required' });
+  const orgId = (req as any).orgId;
+  const { format = 'csv' } = req.query;
 
   const { events } = await store.getEvents(orgId as string);
 

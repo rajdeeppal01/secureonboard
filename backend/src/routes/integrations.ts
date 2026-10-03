@@ -3,11 +3,10 @@ import { db as store } from '../lib/db';
 
 export const integrationRouter = Router();
 
-// GET /api/integrations?orgId=xxx
+// GET /api/integrations
 integrationRouter.get('/', async (req: Request, res: Response) => {
-  const { orgId } = req.query;
-  if (!orgId) return res.status(400).json({ error: 'orgId required' });
-  const integrations = await store.getIntegrations(orgId as string);
+  const orgId = (req as any).orgId;
+  const integrations = await store.getIntegrations(orgId);
   const safe = integrations.map(({ accessToken, refreshToken, ...rest }: any) => ({
     ...rest,
     hasCredentials: !!accessToken,
@@ -17,11 +16,12 @@ integrationRouter.get('/', async (req: Request, res: Response) => {
 
 // POST /api/integrations
 integrationRouter.post('/', async (req: Request, res: Response) => {
-  const { type, name, accessToken, organizationId } = req.body;
-  if (!type || !organizationId) {
-    return res.status(400).json({ error: 'type and organizationId required' });
+  const orgId = (req as any).orgId;
+  const { type, name, accessToken } = req.body;
+  if (!type) {
+    return res.status(400).json({ error: 'type is required' });
   }
-  const integration = await store.upsertIntegration({ type, name, accessToken, organizationId });
+  const integration = await store.upsertIntegration({ type, name, accessToken, organizationId: orgId });
   const { accessToken: _a, refreshToken: _r, ...safe } = integration as any;
   return res.json({ ...safe, hasCredentials: !!_a });
 });

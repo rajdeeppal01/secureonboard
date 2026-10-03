@@ -13,6 +13,7 @@ model Organization {
   id           String   @id @default(cuid())
   name         String
   domain       String   @unique
+  clerkUserId  String?  @unique // Clerk user ID of the owner
   hrisType     String   @default("manual") // "bamboohr" | "rippling" | "manual"
   hrisApiKey   String?
   webhookSecret String  @default("")

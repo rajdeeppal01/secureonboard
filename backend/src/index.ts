@@ -11,6 +11,7 @@ import { employeeRouter } from './routes/employees';
 import { integrationRouter } from './routes/integrations';
 import { auditRouter } from './routes/audit';
 import { organizationRouter } from './routes/organizations';
+import { clerkAuth, requireOrgContext } from './middleware/auth';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -35,17 +36,21 @@ app.use(cors({
 app.use(morgan('dev'));
 app.use(express.json());
 
+// Clerk auth — validates JWT on every request
+app.use(clerkAuth);
+
 // Health check
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API Routes
-app.use('/api/webhooks', webhookRouter);
-app.use('/api/employees', employeeRouter);
-app.use('/api/integrations', integrationRouter);
-app.use('/api/audit', auditRouter);
-app.use('/api/organizations', organizationRouter);
+// API Routes — all protected by requireOrgContext which validates the JWT
+// and attaches req.orgId from the Clerk user's organization
+app.use('/api/webhooks', requireOrgContext, webhookRouter);
+app.use('/api/employees', requireOrgContext, employeeRouter);
+app.use('/api/integrations', requireOrgContext, integrationRouter);
+app.use('/api/audit', requireOrgContext, auditRouter);
+app.use('/api/organizations', requireOrgContext, organizationRouter);
 
 // 404 handler
 app.use((_req, res) => {

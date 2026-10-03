@@ -1,14 +1,17 @@
 /**
  * SecureOnboard API Client
  * Typed wrapper around the Express backend.
+ * Sends Clerk JWT on every request via Authorization header.
  */
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-export const ORG_ID = process.env.NEXT_PUBLIC_ORG_ID || 'demo-org-id';
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+async function request<T>(path: string, token: string | null, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
     ...options,
   });
   if (!res.ok) {
@@ -76,63 +79,72 @@ export interface AuditListResponse {
   offset: number;
 }
 
-// ── API Calls ─────────────────────────────────────────────────────────────
+// ── API factory — call makeApi(token) in each component using useAuth() ────
 
-export const api = {
-  // Dashboard stats
-  getStats: () =>
-    request<AuditStats>(`/api/audit/stats?orgId=${ORG_ID}`),
+export function makeApi(token: string | null) {
+  const r = <T>(path: string, options?: RequestInit) => request<T>(path, token, options);
 
-  // Audit log
-  getAuditEvents: (params?: { limit?: number; offset?: number; status?: string }) => {
-    const p = new URLSearchParams({ orgId: ORG_ID });
-    if (params?.limit) p.set('limit', String(params.limit));
-    if (params?.offset) p.set('offset', String(params.offset));
-    if (params?.status) p.set('status', params.status);
-    return request<AuditListResponse>(`/api/audit?${p}`);
-  },
+  return {
+    // Dashboard stats
+    getStats: () =>
+      r<AuditStats>('/api/audit/stats'),
 
-  exportAuditCsv: () => `${BASE}/api/audit/export?orgId=${ORG_ID}&format=csv`,
+    // Audit log
+    getAuditEvents: (params?: { limit?: number; offset?: number; status?: string }) => {
+      const p = new URLSearchParams();
+      if (params?.limit) p.set('limit', String(params.limit));
+      if (params?.offset) p.set('offset', String(params.offset));
+      if (params?.status) p.set('status', params.status);
+      const qs = p.toString();
+      return r<AuditListResponse>(`/api/audit${qs ? '?' + qs : ''}`);
+    },
 
-  // Employees
-  getEmployees: () =>
-    request<Employee[]>(`/api/employees?orgId=${ORG_ID}`),
+    exportAuditCsvUrl: () => `${BASE}/api/audit/export?format=csv`,
 
-  createEmployee: (data: { name: string; email: string; department?: string; role?: string }) =>
-    request<Employee>('/api/employees', {
-      method: 'POST',
-      body: JSON.stringify({ ...data, organizationId: ORG_ID }),
-    }),
+    // Employees
+    getEmployees: () =>
+      r<Employee[]>('/api/employees'),
 
-  deleteEmployee: (id: string) =>
-    request<{ success: boolean }>(`/api/employees/${id}`, { method: 'DELETE' }),
-
-  // Integrations
-  getIntegrations: () =>
-    request<Integration[]>(`/api/integrations?orgId=${ORG_ID}`),
-
-  connectIntegration: (type: string, name: string, accessToken: string) =>
-    request<Integration>('/api/integrations', {
-      method: 'POST',
-      body: JSON.stringify({ type, name, accessToken, organizationId: ORG_ID }),
-    }),
-
-  disconnectIntegration: (id: string) =>
-    request<{ success: boolean }>(`/api/integrations/${id}`, { method: 'DELETE' }),
-
-  testIntegration: (id: string) =>
-    request<{ success: boolean; testedAt: string }>(`/api/integrations/${id}/test`, { method: 'POST' }),
-
-  // Offboarding
-  triggerOffboard: (employeeEmail: string) =>
-    request<{ message: string; eventId: string; employee: { name: string; email: string }; integrationsQueued: number }>(
-      '/api/webhooks/offboard',
-      {
+    createEmployee: (data: { name: string; email: string; department?: string; role?: string }) =>
+      r<Employee>('/api/employees', {
         method: 'POST',
-        body: JSON.stringify({ employeeEmail, organizationId: ORG_ID, source: 'manual' }),
-      }
-    ),
+        body: JSON.stringify(data),
+      }),
 
-  // Health
-  health: () => request<{ status: string; timestamp: string }>('/health'),
-};
+    deleteEmployee: (id: string) =>
+      r<{ success: boolean }>(`/api/employees/${id}`, { method: 'DELETE' }),
+
+    // Integrations
+    getIntegrations: () =>
+      r<Integration[]>('/api/integrations'),
+
+    connectIntegration: (type: string, name: string, accessToken: string) =>
+      r<Integration>('/api/integrations', {
+        method: 'POST',
+        body: JSON.stringify({ type, name, accessToken }),
+      }),
+
+    disconnectIntegration: (id: string) =>
+      r<{ success: boolean }>(`/api/integrations/${id}`, { method: 'DELETE' }),
+
+    testIntegration: (id: string) =>
+      r<{ success: boolean; testedAt: string }>(`/api/integrations/${id}/test`, { method: 'POST' }),
+
+    // Offboarding
+    triggerOffboard: (employeeEmail: string) =>
+      r<{ message: string; eventId: string; employee: { name: string; email: string }; integrationsQueued: number }>(
+        '/api/webhooks/offboard',
+        {
+          method: 'POST',
+          body: JSON.stringify({ employeeEmail, source: 'manual' }),
+        }
+      ),
+
+    // Health
+    health: () => r<{ status: string; timestamp: string }>('/health'),
+  };
+}
+
+// Backwards-compat alias for any existing usages (unauthenticated)
+export const api = makeApi(null);
+
