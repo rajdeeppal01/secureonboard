@@ -1,5 +1,6 @@
 import { prisma } from './prisma';
 import { randomUUID } from 'crypto';
+import { encryptToken, decryptToken } from './encryption';
 
 /**
  * Prisma-backed store with the same interface as mockStore.ts
@@ -73,22 +74,28 @@ export const prismaStore = {
     return true;
   },
 
-  getIntegrations(orgId: string) {
-    return prisma.integration.findMany({ where: { organizationId: orgId } });
+  async getIntegrations(orgId: string) {
+    const integrations = await prisma.integration.findMany({ where: { organizationId: orgId } });
+    return integrations.map(i => ({
+      ...i,
+      accessToken: decryptToken(i.accessToken),
+      refreshToken: decryptToken(i.refreshToken),
+    }));
   },
 
   async upsertIntegration(data: { type: string; name: string; accessToken?: string; organizationId: string; isConnected?: boolean }) {
+    const encryptedAccess = encryptToken(data.accessToken);
     return prisma.integration.upsert({
       where: { type_organizationId: { type: data.type, organizationId: data.organizationId } },
       update: {
         name: data.name || data.type,
-        accessToken: data.accessToken,
+        accessToken: encryptedAccess,
         isConnected: data.isConnected ?? true,
       },
       create: {
         type: data.type,
         name: data.name || data.type,
-        accessToken: data.accessToken,
+        accessToken: encryptedAccess,
         isConnected: true,
         organizationId: data.organizationId,
       },
